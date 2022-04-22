@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.ycc.test.mapper.personMapper">
+    <select id="getAll" resultType="com.ycc.test.pojo.Person">
+        select * from ycc
+    </select>
+
+    <insert id="insertDemo" parameterType="com.ycc.test.pojo.Person">
+        insert into ycc(name,hobby) values (#{name},#{hobby})
+    </insert>
+
+</mapper>

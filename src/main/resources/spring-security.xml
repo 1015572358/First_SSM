@@ -1,0 +1,139 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+       xmlns:security="http://www.springframework.org/schema/security"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xsi:schemaLocation="http://www.springframework.org/schema/beans
+    http://www.springframework.org/schema/beans/spring-beans.xsd
+    http://www.springframework.org/schema/security
+    http://www.springframework.org/schema/security/spring-security.xsd">
+
+    <bean id="myUserDetailsService" class="com.ycc.config.UserProvider"/>
+    <bean id="myAuthenticationSuccessHandler" class="com.ycc.config.MyAuthenticationSuccessHandler"/>
+    <bean id="myAuthenticationFailureHandler" class="com.ycc.config.MyAuthenticationFailureHandler"/>
+    <!--
+        <security:http>:spring过滤器链配置
+            1) 需要拦截什么资源
+            2) 什么资源对应什么角色权限
+            3) 定制认证方式: HttpBasic or FormLogin
+            4) 定义登录页面,定义登录请求地址,定义错误处理方式
+    -->
+    <security:http>
+        <!--
+            定制过滤器：
+                ref：指定bean
+                before：指定过滤器加载哪个过滤器之前
+         -->
+       <!-- <security:custom-filter ref="imageCodeAuthenticationFilter" before="FORM_LOGIN_FILTER"/>-->
+        <!--
+            使用form-login的方式进行认证
+                login-page:指定获取登录页面的url(需要编写controller返回登录页面)
+                login-processing-url:指定登录页面中post请求提交到哪里的url(不需要编写controller，框架已实现)
+                default-target-url:指定登录成功后，跳转到哪个url(需要编写controller)
+                authentication-success-handler-ref:指定登录成功后，由哪个类来进行处理
+                authentication-failure-handler-ref:指定登录失败后，由哪个类来进行处理
+                username-parameter：指定登录表单中用户名的input中name值，如果这里不配置，则默认为username
+                password-parameter：指定登录表单中密码的input中name值，如果这里不配置，则默认为password
+         -->
+        <security:form-login login-page="/login" login-processing-url="/securityLogin" authentication-success-handler-ref="myAuthenticationSuccessHandler" authentication-failure-handler-ref="myAuthenticationFailureHandler"/>
+
+        <!-- 关闭跨域请求 -->
+        <security:csrf disabled="true"/>
+
+        <security:session-management invalid-session-url="/login">
+
+        </security:session-management>
+
+        <!--
+            pattern:需要拦截的资源  /* 代表根目录下的一级目录  /** 代表根目录下的所有目录
+            注意!!!:由于是拦截器链机制,<security:intercept-url> 的编写顺序要求
+            access:拦截方式
+                isFullyAuthenticated():该资源需要认证才可以访问 如果用户不是被remember me的，才可以访问
+                isAnonymous():只有匿名用户可以访问,登录用户不可访问
+                permitAll():该资源可以所有用户访问
+        -->
+
+        <!-- 配置页面拦截规则 begin -->
+        <!--放行首页-->
+        <security:intercept-url pattern="/product/index" access="permitAll()"/>
+
+        <!--放行登录页-->
+        <security:intercept-url pattern="/login" access="permitAll()"/>
+
+        <!--放行验证码-->
+        <security:intercept-url pattern="/imageCode" access="permitAll()"/>
+
+        <!--
+            这里对增删改进行权限划分：
+                access里面可以写：
+                    hasRole('ROLE_USER')：表示是 ROLE_USER 的用户可以访问
+                    hasAuthority('ROLE_ADD_PRODUCT')：表示拥有 ROLE_ADD_PRODUCT 权限可以访问
+        -->
+        <!--<security:intercept-url pattern="/product/add" access="hasAuthority('ROLE_ADD_PRODUCT')"/>
+        <security:intercept-url pattern="/product/update" access="hasAuthority('ROLE_UPDATE_PRODUCT')"/>
+        <security:intercept-url pattern="/product/list" access="hasAuthority('ROLE_LIST_PRODUCT')"/>
+        <security:intercept-url pattern="/product/delete" access="hasAuthority('ROLE_DELETE_PRODUCT')"/>-->
+
+        <!--放行静态资源-->
+        <security:intercept-url pattern="/static/**" access="permitAll()"/>
+
+        <!--拦截剩余所有页面-->
+        <security:intercept-url pattern="/**" access="isAuthenticated()"/>
+
+        <!-- 配置页面拦截规则 end -->
+
+        <!-- 自定义用户访问权限不足的处理方式(需要编写controller返回权限不足的页面) -->
+        <security:access-denied-handler error-page="/accessDeny"/>
+
+        <!--
+            加上Remember Me功能
+            token-validity-seconds：有效时间(秒)
+        -->
+        <security:remember-me token-repository-ref="jdbcTokenRepository" remember-me-parameter="remember-me" token-validity-seconds="3600" key="ycc"/>
+
+        <!--
+            <security:logout/>：注销功能
+                logout-url="/logout"：springSecurity内LogoutFilter要拦截的url(向这个url发送请求来注销)
+                logout-success-url：用户退出后要被重定向的url
+                invalidate-session：默认为true,用户在退出后Http session失效
+                success-handler-ref：指定一个bean(需要实现LogoutSuccessHandler接口)，用来自定义退出成功后的操作
+        -->
+        <security:logout logout-url="/logout" logout-success-url="/login" invalidate-session="true"/>
+
+    </security:http>
+
+
+
+    <!--
+        <security:authentication-manager> : 认证管理器类
+            1) 认证信息获取方式(用户名,密码,当前用户权限等在哪获取)
+     -->
+    <security:authentication-manager>
+        <!--
+            定义认证信息提供者
+            user-service-ref="myUserDetailsService" ： 指定 UserDetailsService 接口的实现类
+        -->
+        <security:authentication-provider user-service-ref="myUserDetailsService">
+            <!-- 配置：加密算法对用户输入的密码进行加密，然后和数据库的密码进行配对 -->
+            <!--<security:password-encoder ref="bCryptPasswordEncoder"/>-->
+        </security:authentication-provider>
+    </security:authentication-manager>
+
+    <!--
+        创建 springSecurity 密码加密工具类
+        是 PasswordEncoder 接口的实现，也可以使用其他实现
+    -->
+    <bean id="bCryptPasswordEncoder" class="org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder"></bean>
+
+    <!--
+        springSecurity实现 remember me 功能：
+            如果用户登录选择 remember me ，springSecurity会将其cookie值存入数据库，来实现remember me 功能
+            JdbcTokenRepositoryImpl 用来存取cookie值
+
+            <property name="dataSource" ref="dataSource"/>:指定数据源
+            <property name="createTableOnStartup":当项目启动时，springSecurity创建表存储remember me相关信息，第二次启动时要注释这个属性
+    -->
+    <bean id="jdbcTokenRepository" class="org.springframework.security.web.authentication.rememberme.JdbcTokenRepositoryImpl">
+        <property name="dataSource" ref="dataSource"/>
+        <!--<property name="createTableOnStartup" value="true"/>-->
+    </bean>
+</beans>

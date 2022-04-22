@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>HOME</title>
+    <script type="text/javascript" src="static/jquery-3.6.0.min.js"></script>
+</head>
+<body>
+<span>当前登录用户为：[[${user.username}]]；密码为：[[${user.password}]]</span><br>
+<span>登录次数为：[[${loginTimes}]]</span>
+<hr/>
+<button>退~出</button>
+欢迎来到我的世界@xiaocongzai
+<img th:src="@{static/test.png}"  alt="小葱子啊"  height="200px">
+
+<script>
+    $("button").click(function(){
+        window.location.href = "/logout";
+    });
+</script>
+</body>
+</html>

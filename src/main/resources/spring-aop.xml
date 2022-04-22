@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+       xmlns:aop="http://www.springframework.org/schema/aop"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd
+                           http://www.springframework.org/schema/aop
+                           http://www.springframework.org/schema/aop/spring-aop-3.1.xsd">
+    <!--开启aop注解-->
+    <aop:aspectj-autoproxy/>
+    <bean id="AopController" class="com.ycc.aop.AopController"/>
+
+    <aop:config>
+        <!--切点-->
+       <!-- <aop:pointcut id="testAop" expression="execution(* com.ycc.test.service.HellowServiceImpl.*(..))"/>-->
+        <aop:pointcut id="testAop" expression="execution(* com.ycc.test.controller.HelloWorld.*(..))"/>
+        <!--配置切面-->
+        <aop:aspect ref="AopController">
+            <!--<aop:before method="beforeT" pointcut-ref="testAop"></aop:before>-->
+            <aop:before method="beforeT" pointcut-ref="testAop"/>
+        </aop:aspect>
+    </aop:config>
+
+    <aop:config>
+        <aop:pointcut id="logAop" expression="execution(* com.ycc.test..*(..))"/>
+        <aop:aspect ref="AopController">
+            <aop:before method="beforeT" pointcut-ref="logAop"/>
+        </aop:aspect>
+    </aop:config>
+
+</beans>
